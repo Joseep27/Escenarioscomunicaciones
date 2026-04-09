@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PROCOP 5.01 — Comunicaciones</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
+
+  :root {
+    --bg: #0f1117;
+    --surface: #181b24;
+    --surface2: #1e2230;
+    --border: #2a2e3e;
+    --border2: #373d52;
+    --text: #e8eaf0;
+    --text2: #8b90a4;
+    --text3: #555a6e;
+    --tmo: #3b82f6;
+    --tmo-bg: #1a2540;
+    --tmo-border: #2a4080;
+    --dmo: #10b981;
+    --dmo-bg: #0f2820;
+    --dmo-border: #1a4a35;
+    --reserva: #f59e0b;
+    --reserva-bg: #2a1f0a;
+    --reserva-border: #4a3510;
+    --ok: #22c55e;
+    --ok-bg: #0f2a18;
+    --err: #ef4444;
+    --err-bg: #2a0f0f;
+    --accent: #6366f1;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'IBM Plex Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 1.5rem 1rem 3rem;
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 2rem;
+  }
+  header .tag {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  header h1 {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--text);
+  }
+  header p {
+    font-size: 13px;
+    color: var(--text2);
+    margin-top: 4px;
+  }
+
+  .scenario-card {
+    max-width: 780px;
+    margin: 0 auto;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem;
+  }
+
+  .scenario-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .scenario-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text2);
+  }
+  .scenario-title span {
+    color: var(--text);
+    font-weight: 600;
+  }
+
+  .btn-row { display: flex; gap: 8px; }
+  button {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    padding: 7px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    border: 1px solid var(--border2);
+    background: var(--surface2);
+    color: var(--text);
+    transition: background 0.15s, border-color 0.15s;
+  }
+  button:hover { background: var(--border); }
+  button.primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+  button.primary:hover { background: #4f52d6; }
+
+  /* DIAGRAM */
+  .diagram { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  .d-row { display: flex; gap: 10px; justify-content: center; align-items: flex-start; width: 100%; }
+  .arrow { font-size: 18px; color: var(--text3); line-height: 1; }
+
+  .node {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px;
+    text-align: center;
+    min-width: 140px;
+  }
+  .node-title {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #7b9ed9;
+    background: #1a2540;
+    border: 1px solid #2a4080;
+    border-radius: 5px;
+    padding: 4px 8px;
+    margin-bottom: 5px;
+  }
+
+  .drop-zone {
+    min-height: 30px;
+    border: 1px dashed var(--border2);
+    border-radius: 5px;
+    margin-top: 3px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 3px 4px;
+    transition: background 0.12s, border-color 0.12s;
+    gap: 3px;
+    flex-direction: column;
+  }
+  .drop-zone .ph {
+    font-size: 10px;
+    color: var(--text3);
+    font-family: 'IBM Plex Mono', monospace;
+  }
+  .drop-zone.over     { background: #1e2a4a; border-color: var(--tmo); border-style: solid; }
+  .drop-zone.correct  { background: var(--ok-bg); border-color: var(--ok); border-style: solid; }
+  .drop-zone.wrong    { background: var(--err-bg); border-color: var(--err); border-style: solid; }
+
+  /* CHIPS */
+  .chip {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    font-weight: 500;
+    padding: 4px 10px;
+    border-radius: 5px;
+    cursor: grab;
+    user-select: none;
+    white-space: nowrap;
+    border: 1px solid;
+  }
+  .chip:active { cursor: grabbing; opacity: 0.6; }
+  .chip.dragging { opacity: 0.3; }
+  .chip.tmo     { background: var(--tmo-bg);     border-color: var(--tmo-border);     color: #7fb3f5; }
+  .chip.dmo     { background: var(--dmo-bg);     border-color: var(--dmo-border);     color: #5cd9a8; }
+  .chip.reserva { background: var(--reserva-bg); border-color: var(--reserva-border); color: #f5c060; }
+
+  /* POOL */
+  .pool-wrap {
+    margin-top: 1.5rem;
+    border-top: 1px solid var(--border);
+    padding-top: 1rem;
+  }
+  .pool-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--text3);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .pool {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+    min-height: 44px;
+    background: var(--bg);
+    border: 1px dashed var(--border);
+    border-radius: 8px;
+    padding: 10px;
+  }
+
+  /* RESULT */
+  .result {
+    margin-top: 1rem;
+    font-size: 13px;
+    text-align: center;
+    min-height: 20px;
+    font-weight: 500;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+  .result.ok   { color: var(--ok); }
+  .result.fail { color: var(--err); }
+
+  .row-labels {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    gap: 6px;
+    padding: 28px 0 3px;
+    text-align: right;
+  }
+  .row-labels span {
+    font-size: 9px;
+    color: var(--text3);
+    font-family: 'IBM Plex Mono', monospace;
+    white-space: nowrap;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="tag">PROCOP 5.01 · Comunicaciones</div>
+  <h1>Asignación de grupos</h1>
+  <p>Arrastra cada grupo al nodo que le corresponde</p>
+</header>
+
+<div class="scenario-card">
+  <div class="scenario-header">
+    <div class="scenario-title">Escenario <span>0.2</span> — PMP con zonificación</div>
+    <div class="btn-row">
+      <button onclick="checkAnswers()">Comprobar</button>
+      <button class="primary" onclick="resetAll()">Reiniciar</button>
+    </div>
+  </div>
+
+  <div class="diagram">
+
+    <!-- CECOM -->
+    <div class="d-row">
+      <div class="node" style="min-width:160px;">
+        <div class="node-title">CECOM</div>
+        <div class="drop-zone" data-correct="RESERVA 1" ondragover="ov(event)" ondragleave="ol(event)" ondrop="od(event,this)"><span class="ph">· · ·</span></div>
+      </div>
+    </div>
+
+    <div class="arrow">↕</div>
+
+    <!-- PMP -->
+    <div class="d-row">
+      <div class="node" style="min-width:190px;">
+        <div class="node-title">PMP</div>
+        <div class="drop-zone" data-correct="TMO RESERVA 1"    ondragover="ov(event)" ondragleave="ol(event)" ondrop="od(event,this)"><span class="ph">· · ·</span></div>
+        <div class="drop-zone" data-correct="TMO OPERATIVOS 1" ondragover="ov(event)" ondragleave="ol(event)" ondrop="od(event,this)"><span class="ph">· · ·</span></div>
+        <div class="drop-zone" data-correct="TMO OPERATIVOS 2" ondragover="ov(event)" ondragleave="ol(event)" ondrop="od(event,this)"><span class="ph">· · ·</span></div>
+        <div class="drop-zone" data-correct="TMO RESERVA 2"    ondragover="ov(event)" ondragleave="ol(event)" ondrop="od(event,this)"><span class="ph">· · ·</span></div>
+      </div>
+    </div>
+
+    <div class="arrow">↓</div>
+
+    <!-- Zonas -->
+    <div class="d-row" style="align-items:flex-start;">
+      <div class="row-labels">
+        <span>Vehículos + Mandos</span>
+        <span>Mandos + Dotación</span>
+      </div>
+
+      <div class="node">
+        <div class="node-title">ZONA 1</div>
+        <div class="drop-zone" data-correct="TMO OPERATIVOS 1" ondragover="ov(event)" ondragleave="ol(event)" ondrop="od(event,this)"><span class="ph">· · ·</span></div>
+        <div class="drop-zone" data-correct="DMO BV1"          ondragover="ov(event)" ondragleave="ol(event)" ondrop="od(event,this)"><span class="ph">· · ·</span></div>
+      </div>
+
+      <div class="node">
+        <div class="node-title">ZONA 2</div>
+        <div class="drop-zone" data-correct="TMO OPERATIVOS 2" ondragover="ov(event)" ondragleave="ol(event)" ondrop="od(event,this)"><span class="ph">· · ·</span></div>
+        <div class="drop-zone" data-correct="DMO BV2"          ondragover="ov(event)" ondragleave="ol(event)" ondrop="od(event,this)"><span class="ph">· · ·</span></div>
+      </div>
+
+      <div class="node">
+        <div class="node-title">ZONA 3</div>
+        <div class="drop-zone" data-correct="TMO RESERVA 2" ondragover="ov(event)" ondragleave="ol(event)" ondrop="od(event,this)"><span class="ph">· · ·</span></div>
+        <div class="drop-zone" data-correct="DMO BV3"       ondragover="ov(event)" ondragleave="ol(event)" ondrop="od(event,this)"><span class="ph">· · ·</span></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Pool -->
+  <div class="pool-wrap">
+    <div class="pool-label">Grupos disponibles</div>
+    <div class="pool" id="pool" ondragover="event.preventDefault()" ondrop="returnPool(event)">
+      <div class="chip reserva" draggable="true" data-label="RESERVA 1"        ondragstart="ds(event)">RESERVA 1</div>
+      <div class="chip tmo"     draggable="true" data-label="TMO RESERVA 1"    ondragstart="ds(event)">TMO RESERVA 1</div>
+      <div class="chip tmo"     draggable="true" data-label="TMO OPERATIVOS 1" ondragstart="ds(event)">TMO OPERATIVOS 1</div>
+      <div class="chip tmo"     draggable="true" data-label="TMO OPERATIVOS 1" ondragstart="ds(event)">TMO OPERATIVOS 1</div>
+      <div class="chip tmo"     draggable="true" data-label="TMO OPERATIVOS 2" ondragstart="ds(event)">TMO OPERATIVOS 2</div>
+      <div class="chip tmo"     draggable="true" data-label="TMO OPERATIVOS 2" ondragstart="ds(event)">TMO OPERATIVOS 2</div>
+      <div class="chip tmo"     draggable="true" data-label="TMO RESERVA 2"    ondragstart="ds(event)">TMO RESERVA 2</div>
+      <div class="chip tmo"     draggable="true" data-label="TMO RESERVA 2"    ondragstart="ds(event)">TMO RESERVA 2</div>
+      <div class="chip dmo"     draggable="true" data-label="DMO BV1"          ondragstart="ds(event)">DMO BV1</div>
+      <div class="chip dmo"     draggable="true" data-label="DMO BV2"          ondragstart="ds(event)">DMO BV2</div>
+      <div class="chip dmo"     draggable="true" data-label="DMO BV3"          ondragstart="ds(event)">DMO BV3</div>
+    </div>
+  </div>
+
+  <div class="result" id="result"></div>
+</div>
+
+<script>
+let drag = null;
+
+function ds(e) {
+  drag = e.currentTarget;
+  drag.classList.add('dragging');
+  e.dataTransfer.effectAllowed = 'move';
+}
+document.addEventListener('dragend', () => {
+  if (drag) { drag.classList.remove('dragging'); drag = null; }
+});
+
+function ov(e) { e.preventDefault(); e.currentTarget.classList.add('over'); }
+function ol(e) { e.currentTarget.classList.remove('over'); }
+
+function od(e, dz) {
+  e.preventDefault();
+  dz.classList.remove('over','correct','wrong');
+  if (!drag) return;
+  const ex = dz.querySelector('.chip');
+  if (ex) { ex.draggable = true; document.getElementById('pool').appendChild(ex); }
+  const ph = dz.querySelector('.ph');
+  if (ph) ph.remove();
+  drag.draggable = false;
+  dz.appendChild(drag);
+  drag = null;
+  document.getElementById('result').textContent = '';
+}
+
+function returnPool(e) {
+  e.preventDefault();
+  if (!drag) return;
+  const fromDz = drag.closest('.drop-zone');
+  if (fromDz) {
+    fromDz.classList.remove('correct','wrong');
+    if (!fromDz.querySelector('.ph')) {
+      const p = document.createElement('span');
+      p.className = 'ph'; p.textContent = '· · ·';
+      fromDz.appendChild(p);
+    }
+  }
+  drag.draggable = true;
+  document.getElementById('pool').appendChild(drag);
+  drag = null;
+  document.getElementById('result').textContent = '';
+}
+
+function checkAnswers() {
+  const dzs = document.querySelectorAll('.drop-zone');
+  let total = dzs.length, correct = 0;
+  dzs.forEach(dz => {
+    dz.classList.remove('correct','wrong');
+    const chip = dz.querySelector('.chip');
+    if (!chip) return;
+    if (chip.dataset.label === dz.dataset.correct) { dz.classList.add('correct'); correct++; }
+    else dz.classList.add('wrong');
+  });
+  const r = document.getElementById('result');
+  if (correct === total) {
+    r.textContent = '✓ perfecto — ' + correct + '/' + total;
+    r.className = 'result ok';
+  } else {
+    r.textContent = correct + '/' + total + ' — los rojos están mal';
+    r.className = 'result fail';
+  }
+}
+
+function resetAll() {
+  const pool = document.getElementById('pool');
+  document.querySelectorAll('.drop-zone').forEach(dz => {
+    dz.classList.remove('correct','wrong');
+    const chip = dz.querySelector('.chip');
+    if (chip) { chip.draggable = true; pool.appendChild(chip); }
+    if (!dz.querySelector('.ph')) {
+      const p = document.createElement('span');
+      p.className = 'ph'; p.textContent = '· · ·';
+      dz.appendChild(p);
+    }
+  });
+  document.getElementById('result').textContent = '';
+}
+</script>
+</body>
+</html>
